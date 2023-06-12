@@ -1,3 +1,64 @@
+//************* PROJECT TYPE ************************** */
+
+enum ProjectStatus { //This is perfect for enums.
+  Active,
+  Finished,
+}
+
+class Project {
+  constructor(
+    //This is the shorthand way of creating properties in a class.
+    public id: string,
+    public title: string,
+    public description: string,
+    public people: number,
+    public status: ProjectStatus
+  ) {}
+}
+
+//**********PROJECT STATE MANAGEMENT **********************/
+type Listener = (items: Project[]) => void; //This
+
+class ProjectState {
+  private listeners: Listener[] = [];
+  private projects: any[] = [];
+  private static instance: ProjectState; //This is a static property that will hold the instance of the class.
+
+  private constructor() {}
+
+  static getInstance() {
+    //We only want to create one instance of the class. If one already exists, we want to return it.
+    if (this.instance) {
+      return this.instance;
+    }
+    this.instance = new ProjectState();
+    return this.instance;
+  }
+
+  addListener(listenerFn: Listener) {
+    this.listeners.push(listenerFn);
+  }
+
+  addProject(title: string, description: string, numOfPeople: number) {
+    const newProject = new Project(
+      Math.random().toString(),
+      title,
+      description,
+      numOfPeople,
+      ProjectStatus.Active
+    );
+    this.projects.push(newProject);
+    for (const listenerFn of this.listeners) {
+      //We are looping through the listeners array and calling each function.
+      listenerFn(this.projects.slice()); //We are passing a copy of the projects array to the listener function.
+      //NOTE: the spread operator compiles to the slice method.
+    }
+  }
+}
+
+const projectState = ProjectState.getInstance(); //Creating a global instance of the ProjectState class that can be used anywhere in the app.
+//  We use the getInstance method to create the instance and to make sure that only one instance is created.
+
 //*****************************VALIDATION**************************/
 interface Validatable {
   value: string | number;
@@ -54,6 +115,75 @@ function autobind(_: any, _2: string, descriptor: PropertyDescriptor) {
     },
   };
   return adjustedDescriptor;
+}
+
+//**********PROJECT LIST CLASS ************************ */
+
+class ProjectList {
+  templateElement: HTMLTemplateElement;
+  hostElement: HTMLDivElement;
+  element: HTMLElement; //Thisis a section element but there is no type for it in TS. We can use HTMLElement instead.
+  assignedProjects: Project[];
+
+  constructor(private type: 'active' | 'finished') {
+    this.templateElement = document.getElementById(
+      'project-list'
+    ) as HTMLTemplateElement;
+    this.hostElement = document.getElementById('app') as HTMLDivElement;
+
+    this.assignedProjects = [];
+
+    const importedNode = document.importNode(
+      this.templateElement.content,
+      true
+    ); //The '.content' property gives us access to the content of the template (or any html element).
+    //The 'true' argument makes sure that all nested elements are also included.
+    this.element = importedNode.firstElementChild as HTMLElement;
+    //We are casting the importedNode to a HTMLFormElement
+    // because we know that the first element is a form element.
+    this.element.id = `${type}-projects`;
+    // Before we attach we want to talk to the state and add a listener.
+    projectState.addListener((projects: any[]) => {
+      //We are adding a listener to the projectState instance.
+      //The listener will be called whenever the projects array changes.
+      const relevantProjects = projects.filter((prj) => {
+        //We get a copy of the projects array from the state.
+        if (this.type === 'active') {
+          return prj.status === ProjectStatus.Active;
+        }
+        return prj.status === ProjectStatus.Finished;
+      });
+
+      this.assignedProjects = relevantProjects;
+      this.renderProjects();
+    });
+
+    this.attach();
+    this.renderContent();
+  }
+
+  private renderProjects() {
+    const listEl = document.getElementById(
+      `${this.type}-projects-list`
+    )! as HTMLUListElement; // casting to HTMLUListElement because we know that the element is a ul element.
+    listEl.innerHTML = '';
+    for (const prjItem of this.assignedProjects) {
+      const listItem = document.createElement('li');
+      listItem.textContent = prjItem.title;
+      listEl.appendChild(listItem);
+    }
+  }
+
+  private renderContent() {
+    const listId = `${this.type}-projects-list`;
+    this.element.querySelector('ul')!.id = listId; //We are adding the id to the ul element.
+    this.element.querySelector('h2')!.textContent =
+      this.type.toUpperCase() + 'PROJECTS'; //We are adding the text to the h2 element.
+  }
+
+  private attach() {
+    this.hostElement.insertAdjacentElement('beforeend', this.element); //The 'beforeend' argument will insert the element as the last child of the host element.
+  }
 }
 
 //******PROJECT INPUT CLASS ********************/
@@ -145,7 +275,7 @@ class ProjectInput {
     const userInput = this.gatherUserInput();
     if (Array.isArray(userInput)) {
       const [title, desc, people] = userInput;
-      console.log(title, desc, people);
+      projectState.addProject(title, desc, people);
       this.clearInputs();
     }
   }
@@ -163,3 +293,5 @@ class ProjectInput {
 }
 
 const projInput = new ProjectInput();
+const activeProjList = new ProjectList('active');
+const finishedProjList = new ProjectList('finished');
