@@ -2,10 +2,10 @@
 // / <reference path="../decorators/autobind.ts" />
 // / <reference path="../util/validation.ts" />
 // / <reference path="../state/project-state.ts" />
-import { Component } from './base-component.js';
-import { Validatable, validate } from '../util/validation.js';
-import { autobind } from '../decorators/autobind.js';
-import { projectState } from '../state/project-state.js';
+import { Component } from './base-component';
+import { Validatable, validate } from '../util/validation';
+import { autobind } from '../decorators/autobind';
+import { projectState } from '../state/project-state';
 
 export class ProjectInput extends Component<HTMLDivElement, HTMLFormElement> {
   //   templateElement: HTMLTemplateElement; // We are able to access DOM elements because we added dom to libs in tsconfig.json

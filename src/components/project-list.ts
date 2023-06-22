@@ -3,12 +3,12 @@
 // / <reference path="../state/project-state.ts" />
 // / <reference path="../models/drag-drop-interfaces.ts" />
 
-import { Component } from './base-component.js';
-import { autobind } from '../decorators/autobind.js';
-import { Project, ProjectStatus } from '../models/project-model.js';
-import { projectState } from '../state/project-state.js';
-import { ProjectItem } from './project-item.js';
-import { DragTarget } from '../models/drag-drop-interfaces.js';
+import { Component } from './base-component';
+import { autobind } from '../decorators/autobind';
+import { Project, ProjectStatus } from '../models/project-model';
+import { projectState } from '../state/project-state';
+import { ProjectItem } from './project-item';
+import { DragTarget } from '../models/drag-drop-interfaces';
 
 export class ProjectList
   extends Component<HTMLDivElement, HTMLElement>
